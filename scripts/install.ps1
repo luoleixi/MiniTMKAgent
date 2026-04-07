@@ -1,10 +1,6 @@
 # MiniTMK Agent - One-Click Installer for Windows
 # Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 
-param(
-    [string]$Version = "latest"
-)
-
 # 设置 UTF-8 编码
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -12,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
 
 # 配置
+$Version = if ($env:MINI_TMK_VERSION) { $env:MINI_TMK_VERSION } else { "latest" }
 $RepoOwner = "luoleixi"
 $RepoName = "MiniTMKAgent"
 $BinaryName = "mini-tmk-agent.exe"
