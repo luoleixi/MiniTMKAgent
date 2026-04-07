@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -115,10 +116,59 @@ func (d *WAVDecoder) Decode(reader io.Reader) ([]int16, error) {
 		return nil, fmt.Errorf("读取音频数据失败: %w", err)
 	}
 
-	// 转换为int16样本
-	samples := make([]int16, len(data)/2)
-	for i := 0; i < len(samples); i++ {
-		samples[i] = int16(binary.LittleEndian.Uint16(data[i*2 : (i*2)+2]))
+	// 根据位深度转换样本
+	var samples []int16
+	bitsPerSample := int(header.BitsPerSample)
+	if bitsPerSample == 0 {
+		bitsPerSample = 16 // 默认值
+	}
+
+	switch bitsPerSample {
+	case 8:
+		// 8bit 无符号整数，需要转换为16bit有符号
+		samples = make([]int16, len(data))
+		for i := 0; i < len(data); i++ {
+			// 8bit unsigned (0-255) -> 16bit signed (-32768 to 32767)
+			samples[i] = int16(int(data[i])-128) * 256
+		}
+	case 16:
+		// 16bit 有符号整数（小端序）
+		samples = make([]int16, len(data)/2)
+		for i := 0; i < len(samples); i++ {
+			samples[i] = int16(binary.LittleEndian.Uint16(data[i*2 : (i*2)+2]))
+		}
+	case 24:
+		// 24bit 有符号整数，需要转换为16bit
+		samples = make([]int16, len(data)/3)
+		for i := 0; i < len(samples); i++ {
+			b0 := int32(data[i*3])
+			b1 := int32(data[i*3+1])
+			b2 := int32(data[i*3+2])
+			// 24bit signed -> 16bit signed (取高16位)
+			val := (b0 | (b1 << 8) | (b2 << 16))
+			if val >= 8388608 { // 2^23
+				val -= 16777216 // 2^24
+			}
+			samples[i] = int16(val >> 8)
+		}
+	case 32:
+		// 32bit 浮点数或整数
+		if header.AudioFormat == 3 { // IEEE float
+			samples = make([]int16, len(data)/4)
+			for i := 0; i < len(samples); i++ {
+				bits := binary.LittleEndian.Uint32(data[i*4 : (i*4)+4])
+				f := math.Float32frombits(bits)
+				samples[i] = int16(f * 32767)
+			}
+		} else { // 32bit signed integer
+			samples = make([]int16, len(data)/4)
+			for i := 0; i < len(samples); i++ {
+				val := int32(binary.LittleEndian.Uint32(data[i*4 : (i*4)+4]))
+				samples[i] = int16(val >> 16)
+			}
+		}
+	default:
+		return nil, fmt.Errorf("不支持的位深度: %d bits", bitsPerSample)
 	}
 
 	// 如果需要，进行采样率转换和声道转换
