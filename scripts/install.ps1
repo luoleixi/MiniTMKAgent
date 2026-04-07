@@ -3,6 +3,7 @@
 
 # 设置 UTF-8 编码
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
@@ -146,10 +147,10 @@ $env:Path += ";$InstallDir"
 
 Write-Host "立即使用:" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  mini-tmk-agent quickstart" -ForegroundColor White
+Write-Host "  mini-tmk-agent" -ForegroundColor White
 Write-Host ""
 Write-Host "或者:" -ForegroundColor Gray
-Write-Host "  $InstallDir\$BinaryName quickstart"
+Write-Host "  $InstallDir\$BinaryName"
 Write-Host ""
 Write-Host "获取 API Key: https://dashscope.console.aliyun.com/"
 Write-Host ""
