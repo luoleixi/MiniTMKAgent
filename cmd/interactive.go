@@ -284,7 +284,7 @@ func printHelp() {
 	fmt.Printf("  %-15s 转录音频文件\n", "/transcript")
 	fmt.Println("                   用法: /transcript <音频文件> <输出文件> [语言]")
 	fmt.Println("                   示例: /transcript audio.wav out.txt zh")
-	fmt.Println("                   支持格式: wav, mp3, pcm, m4a, flac, aac, ogg")
+	fmt.Println("                   支持格式: MP3 (文件转录)")
 	fmt.Println()
 	fmt.Println("【配置管理】")
 	fmt.Printf("  %-15s 查看和修改配置\n", "/config")

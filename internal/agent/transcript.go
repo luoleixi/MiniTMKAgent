@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -84,87 +83,21 @@ func (a *TranscriptAgent) validateAudioFile() error {
 		return fmt.Errorf("指定路径是目录而非文件: %s", a.config.AudioFile)
 	}
 
-	// 检查文件扩展名
+	// 检查文件扩展名 - 文件转录仅支持MP3格式
 	ext := strings.ToLower(filepath.Ext(a.config.AudioFile))
-	supportedExts := []string{".wav", ".mp3", ".pcm", ".m4a", ".flac", ".aac", ".ogg"}
-	valid := false
-	for _, se := range supportedExts {
-		if ext == se {
-			valid = true
-			break
-		}
-	}
-
-	if !valid {
-		return fmt.Errorf("不支持的音频格式: %s, 支持的格式: %v", ext, supportedExts)
+	if ext != ".mp3" {
+		return fmt.Errorf("不支持的音频格式: %s, 文件转录仅支持 MP3 格式", ext)
 	}
 
 	return nil
 }
 
-// needsTranscoding 检查音频格式是否需要转码
-func needsTranscoding(filename string) bool {
-	ext := strings.ToLower(filepath.Ext(filename))
-	switch ext {
-	case ".m4a", ".flac", ".aac", ".ogg":
-		return true
-	default:
-		return false
-	}
-}
-
-// transcodeWithFFmpeg 使用FFmpeg转码音频为WAV格式
-func (a *TranscriptAgent) transcodeWithFFmpeg(ctx context.Context) (string, error) {
-	// 创建临时文件
-	tempFile, err := os.CreateTemp("", "transcript-*.wav")
-	if err != nil {
-		return "", fmt.Errorf("创建临时文件失败: %w", err)
-	}
-	tempFile.Close()
-	tempPath := tempFile.Name()
-
-	fmt.Printf("🔄 正在转码音频 (%s) -> WAV...\n", filepath.Ext(a.config.AudioFile))
-
-	// 构建FFmpeg命令
-	cmd := exec.CommandContext(ctx, "ffmpeg",
-		"-i", a.config.AudioFile,  // 输入文件
-		"-ar", "16000",            // 采样率16kHz
-		"-ac", "1",                // 单声道
-		"-sample_fmt", "s16",      // 16bit有符号整数
-		"-y",                      // 覆盖输出文件
-		tempPath,                  // 输出文件
-	)
-
-	// 捕获错误输出
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		os.Remove(tempPath)
-		return "", fmt.Errorf("FFmpeg转码失败: %w\n输出: %s", err, string(output))
-	}
-
-	return tempPath, nil
-}
-
-// transcribeAudio 转录音频
+// transcribeAudio 转录音频 (仅支持MP3)
 func (a *TranscriptAgent) transcribeAudio(ctx context.Context) (string, error) {
-	audioFile := a.config.AudioFile
-	var tempFile string
-
-	// 如果需要转码，使用FFmpeg
-	if needsTranscoding(audioFile) {
-		var err error
-		tempFile, err = a.transcodeWithFFmpeg(ctx)
-		if err != nil {
-			return "", err
-		}
-		defer os.Remove(tempFile)
-		audioFile = tempFile
-	}
-
-	fmt.Println("🔄 正在解码音频文件...")
+	fmt.Println("🔄 正在解码MP3音频文件...")
 
 	// 解码音频文件
-	samples, err := audio.DecodeFile(audioFile)
+	samples, err := audio.DecodeFile(a.config.AudioFile)
 	if err != nil {
 		return "", fmt.Errorf("解码音频失败: %w", err)
 	}

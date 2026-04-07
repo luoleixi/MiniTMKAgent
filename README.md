@@ -50,7 +50,7 @@ mini-tmk-agent
 > /start zh en        # 指定语言对
 > /start-en           # 快捷：中文 → 英文
 > /start-ja           # 快捷：中文 → 日文
-> /transcript file.wav out.txt   # 转录音频文件
+> /transcript file.mp3 out.txt   # 转录音频文件
 > /config             # 配置管理
 > /help               # 显示帮助
 > /quit               # 退出

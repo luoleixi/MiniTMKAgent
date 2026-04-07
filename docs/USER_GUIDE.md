@@ -120,7 +120,7 @@ mini-tmk-agent
 ### 文件转录
 
 ```
-> /transcript audio.wav output.txt zh
+> /transcript audio.mp3 output.txt zh
 ```
 
 参数：
@@ -128,7 +128,7 @@ mini-tmk-agent
 - `output.txt`: 输出文本文件
 - `zh`: 音频语言 (可选，默认中文)
 
-支持格式：wav, mp3, pcm, m4a, flac, aac, ogg
+支持格式：MP3
 
 ### 配置管理
 
