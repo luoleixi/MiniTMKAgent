@@ -10,7 +10,6 @@ import (
 const DefaultLanguage = "zh"
 
 // New 创建默认的 ASR 识别器（使用百炼平台）
-// 统一使用百炼平台 API Key，无需配置阿里云 NLS
 func New(language string) (Recognizer, error) {
 	cfg := config.GetInstance()
 

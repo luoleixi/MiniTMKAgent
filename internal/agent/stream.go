@@ -25,14 +25,13 @@ type StreamConfig struct {
 
 // StreamAgent 流式同传Agent
 type StreamAgent struct {
-	config      StreamConfig
-	recognizer  recognizer.Recognizer
-	recorder    *audio.Recorder
-	vad         *audio.VAD
-	translator  translator.Translator
-	tts         tts.TTS
-	player      *audio.Player
-	seqGen      *audio.SequenceGenerator
+	config     StreamConfig
+	recognizer recognizer.Recognizer
+	recorder   *audio.Recorder
+	translator translator.Translator
+	tts        tts.TTS
+	player     *audio.Player
+	seqGen     *audio.SequenceGenerator
 }
 
 // NewStreamAgent 创建流式同传Agent
@@ -82,7 +81,7 @@ func (a *StreamAgent) startWithServer(ctx context.Context) error {
 	a.translator = relayClient.NewRelayTranslator()
 	a.recognizer = relayClient.NewRelayRecognizer(a.config.SourceLang)
 
-	return a.runAudioLoop(ctx)
+	return a.runStreamingAudioLoop(ctx)
 }
 
 // startDirect 直连百炼平台运行
@@ -138,124 +137,6 @@ func (a *StreamAgent) startDirect(ctx context.Context) error {
 	}
 
 	return a.runStreamingAudioLoop(ctx)
-}
-
-// runAudioLoop 运行音频处理主循环
-func (a *StreamAgent) runAudioLoop(ctx context.Context) error {
-	// 启动识别器
-	if err := a.recognizer.Start(); err != nil {
-		return fmt.Errorf("启动识别器失败: %w", err)
-	}
-	defer a.recognizer.Stop()
-
-	// 显示当前配置信息
-	fmt.Printf("🎤 启动流式同传模式 [%s] → [%s]\n", a.config.SourceLang, a.config.TargetLang)
-	if a.config.DirectMode {
-		asrSource, maskedASRKey := recognizer.GetCurrentAPIKeySource()
-		transSource, maskedTransKey := translator.GetCurrentConfigSource()
-		fmt.Printf("   模式: 直连阿里云\n")
-		fmt.Printf("   ASR 使用 %s: %s\n", asrSource, maskedASRKey)
-		fmt.Printf("   翻译使用 %s: %s\n", transSource, maskedTransKey)
-	} else {
-		serverURL := a.config.ServerURL
-		if serverURL == "" {
-			serverURL = "http://localhost:8080"
-		}
-		fmt.Printf("   模式: 服务端中转 (%s)\n", serverURL)
-	}
-	fmt.Println("   按 Ctrl+C 停止监听...")
-	fmt.Println()
-
-	// 创建音频录制器
-	recorder, err := audio.NewRecorder(16000)
-	if err != nil {
-		return fmt.Errorf("创建音频录制器失败: %w", err)
-	}
-	a.recorder = recorder
-
-	if err := recorder.Start(); err != nil {
-		return fmt.Errorf("启动音频录制失败: %w", err)
-	}
-	defer recorder.Stop()
-
-	// 创建音频播放器
-	player, err := audio.NewPlayer(16000)
-	if err != nil {
-		return fmt.Errorf("创建音频播放器失败: %w", err)
-	}
-	a.player = player
-
-	if err := player.Start(); err != nil {
-		return fmt.Errorf("启动音频播放器失败: %w", err)
-	}
-	defer player.Stop()
-
-	// 创建 VAD
-	vadConfig := audio.DefaultVADConfig()
-	vadConfig.MinSpeechDuration = 500
-	vadConfig.MinSilenceDuration = 500
-	// 降低能量阈值，更容易检测语音
-	vadConfig.EnergyThreshold = 0.005
-
-	vad := audio.NewVAD(vadConfig,
-		func() {
-			// 语音开始
-			fmt.Println("🗣️  检测到语音...")
-		},
-		func(speechData []int16) {
-			// 语音结束，发送到识别器
-			utils.Debugf("语音结束，数据长度: %d 样本", len(speechData))
-			if err := a.recognizer.SendAudio(speechData); err != nil {
-				fmt.Printf("   ❌ 发送音频失败: %v\n", err)
-			} else {
-				utils.Debug("音频已发送到识别器")
-			}
-		},
-	)
-	a.vad = vad
-
-	// 启动结果显示协程
-	go a.processResults(ctx)
-
-	// 主循环：读取音频并送入 VAD
-	fmt.Println("等待语音输入...")
-	dataChan := recorder.GetDataChan()
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("\n👋 再见!")
-			return nil
-		case data, ok := <-dataChan:
-			if !ok {
-				// 通道已关闭，检查是否应该退出
-				select {
-				case <-ctx.Done():
-					fmt.Println("\n👋 再见!")
-					return nil
-				default:
-					// 通道意外关闭，等待一会儿再检查
-					time.Sleep(100 * time.Millisecond)
-					continue
-				}
-			}
-			// 分帧处理（20ms 一帧）
-			frameSize := 320 // 16kHz * 0.02s
-			for i := 0; i < len(data); i += frameSize {
-				select {
-				case <-ctx.Done():
-					fmt.Println("\n👋 再见!")
-					return nil
-				default:
-					end := i + frameSize
-					if end > len(data) {
-						end = len(data)
-					}
-					frame := data[i:end]
-					vad.Process(frame)
-				}
-			}
-		}
-	}
 }
 
 // processResults 处理识别结果
