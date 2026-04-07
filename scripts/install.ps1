@@ -1,7 +1,7 @@
 # MiniTMK Agent - One-Click Installer for Windows
 # Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 
-# 设置 UTF-8 编码
+# Set UTF-8 encoding
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -9,14 +9,14 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
 
-# 配置
+# Configuration
 $Version = if ($env:MINI_TMK_VERSION) { $env:MINI_TMK_VERSION } else { "latest" }
 $RepoOwner = "luoleixi"
 $RepoName = "MiniTMKAgent"
 $BinaryName = "mini-tmk-agent.exe"
 $InstallDir = "$env:LOCALAPPDATA\mini-tmk-agent"
 
-# 输出函数
+# Output functions
 function Write-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
 function Write-Success($msg) {
     try {
@@ -28,7 +28,7 @@ function Write-Success($msg) {
 function Write-Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
 function Write-Err($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
-# 获取系统架构
+# Get system architecture
 function Get-Architecture {
     $arch = $env:PROCESSOR_ARCHITECTURE.ToLower()
     switch ($arch) {
@@ -36,108 +36,108 @@ function Get-Architecture {
         "x86" { return "386" }
         "arm64" { return "arm64" }
         default {
-            Write-Err "不支持的架构: $arch"
+            Write-Err "Unsupported architecture: $arch"
             exit 1
         }
     }
 }
 
-# 获取最新版本
+# Get latest version
 function Get-LatestVersion {
-    Write-Info "获取最新版本..."
+    Write-Info "Fetching latest version..."
     try {
         $apiUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
         $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -TimeoutSec 30
         return $release.tag_name
     } catch {
-        Write-Err "无法获取最新版本: $_"
+        Write-Err "Failed to get latest version: $_"
         exit 1
     }
 }
 
-# 下载二进制文件
+# Download binary
 function Download-Binary($version, $arch) {
     $assetName = "mini-tmk-agent.exe"
     $downloadUrl = "https://github.com/$RepoOwner/$RepoName/releases/download/$version/$assetName"
     $outputPath = "$env:TEMP\$BinaryName"
 
-    Write-Info "下载 $assetName ..."
+    Write-Info "Downloading $assetName ..."
 
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath -UseBasicParsing -TimeoutSec 120
 
         if (-not (Test-Path $outputPath) -or (Get-Item $outputPath).Length -lt 1000) {
-            Write-Err "下载文件无效"
+            Write-Err "Downloaded file is invalid"
             exit 1
         }
 
         $size = [math]::Round((Get-Item $outputPath).Length / 1MB, 2)
-        Write-Success "下载完成 (${size} MB)"
+        Write-Success "Download complete (${size} MB)"
         return $outputPath
     } catch {
-        Write-Err "下载失败: $_"
+        Write-Err "Download failed: $_"
         exit 1
     }
 }
 
-# 安装二进制文件
+# Install binary
 function Install-Binary($sourcePath) {
     $targetPath = Join-Path $InstallDir $BinaryName
 
-    # 创建安装目录
+    # Create installation directory
     if (-not (Test-Path $InstallDir)) {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-        Write-Info "创建目录: $InstallDir"
+        Write-Info "Created directory: $InstallDir"
     }
 
-    # 如果文件正在运行，先尝试删除
+    # Remove existing file if running
     if (Test-Path $targetPath) {
         try {
             Remove-Item $targetPath -Force -ErrorAction Stop
         } catch {
-            Write-Warn "无法替换正在运行的程序，尝试覆盖..."
+            Write-Warn "Cannot replace running program, attempting to overwrite..."
         }
     }
 
-    # 复制二进制文件
+    # Copy binary file
     Copy-Item $sourcePath $targetPath -Force
     Remove-Item $sourcePath -Force
-    Write-Success "安装到: $targetPath"
+    Write-Success "Installed to: $targetPath"
 
     return $targetPath
 }
 
-# 添加到用户 PATH
+# Add to user PATH
 function Add-ToUserPath {
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 
     if ($currentPath -like "*$InstallDir*") {
-        Write-Info "PATH 中已存在"
+        Write-Info "Already in PATH"
         return
     }
 
-    Write-Info "添加到用户 PATH..."
+    Write-Info "Adding to user PATH..."
 
     $newPath = if ($currentPath.EndsWith(";")) { "$currentPath$InstallDir" } else { "$currentPath;$InstallDir" }
     [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
 
-    Write-Success "已添加到 PATH"
+    Write-Success "Added to PATH"
 }
 
-# 主程序
+# Main program
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  MiniTMK Agent 一键安装" -ForegroundColor Cyan
+Write-Host "  MiniTMK Agent One-Click Installer" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $arch = Get-Architecture
-Write-Info "系统架构: $arch"
+Write-Info "System architecture: $arch"
 
 if ($Version -eq "latest") {
     $Version = Get-LatestVersion
 }
-Write-Info "安装版本: $Version"
+Write-Info "Installing version: $Version"
 
 $tempFile = Download-Binary $Version $arch
 $installedPath = Install-Binary $tempFile
@@ -145,19 +145,19 @@ Add-ToUserPath
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  安装完成!" -ForegroundColor Green
+Write-Host "  Installation Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
-# 更新当前会话 PATH
+# Update current session PATH
 $env:Path += ";$InstallDir"
 
-Write-Host "立即使用:" -ForegroundColor Yellow
+Write-Host "Start using:" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  mini-tmk-agent" -ForegroundColor White
 Write-Host ""
-Write-Host "或者:" -ForegroundColor Gray
+Write-Host "Or:" -ForegroundColor Gray
 Write-Host "  $InstallDir\$BinaryName"
 Write-Host ""
-Write-Host "获取 API Key: https://dashscope.console.aliyun.com/"
+Write-Host "Get API Key: https://dashscope.console.aliyun.com/"
 Write-Host ""
