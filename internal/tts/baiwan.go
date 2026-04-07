@@ -94,7 +94,10 @@ func (t *BaiwanTTS) SynthesizeStream(text, voice string, onAudioChunk func(chunk
 		return err
 	}
 
-	return t.synthesizeInternal(text, voice, onAudioChunk)
+	err := t.synthesizeInternal(text, voice, onAudioChunk)
+	// 无论成功与否，都关闭连接，避免状态混乱
+	t.Close()
+	return err
 }
 
 // synthesizeInternal 内部合成方法
@@ -137,13 +140,25 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 
 	textSent := false
 	finished := false
+	lastActivity := time.Now()
 
 	// ========== 步骤2-6: 循环接收消息 ==========
 	for !finished {
+		// 设置读取超时（30秒）
+		t.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+
 		messageType, message, err := t.conn.ReadMessage()
 		if err != nil {
+			// 检查是否是超时
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+				return nil // 正常关闭
+			}
+			if time.Since(lastActivity) > 30*time.Second {
+				return fmt.Errorf("读取WebSocket消息超时")
+			}
 			return fmt.Errorf("读取WebSocket消息失败: %w", err)
 		}
+		lastActivity = time.Now()
 
 		// 处理二进制消息（音频数据）
 		if messageType == websocket.BinaryMessage {
@@ -233,9 +248,12 @@ func (t *BaiwanTTS) connect() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if !t.isClosed && t.conn != nil {
-		return nil
+	// 如果连接已存在，先关闭它
+	if t.conn != nil {
+		t.conn.Close()
+		t.conn = nil
 	}
+	t.isClosed = true
 
 	headers := http.Header{
 		"Authorization":              {fmt.Sprintf("bearer %s", t.apiKey)},
@@ -292,9 +310,11 @@ func (t *BaiwanTTS) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.conn != nil && !t.isClosed {
-		t.isClosed = true
-		return t.conn.Close()
+	t.isClosed = true
+	if t.conn != nil {
+		conn := t.conn
+		t.conn = nil
+		return conn.Close()
 	}
 	return nil
 }

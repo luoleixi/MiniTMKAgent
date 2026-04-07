@@ -140,8 +140,21 @@ func PlayMP3File(filePath string) error {
 }
 
 // PlayMP3Data 播放MP3数据（便捷函数）
-// 优先使用纯 Go 播放器，无需外部依赖
+// 使用播放队列确保多条语音按顺序播放
 func PlayMP3Data(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	// 使用播放队列，确保按顺序播放
+	queue := GetPlayQueue()
+	queue.Enqueue(data)
+	return nil
+}
+
+// PlayMP3DataDirect 直接播放MP3数据（不使用队列，会打断当前播放）
+// 优先使用纯 Go 播放器，无需外部依赖
+func PlayMP3DataDirect(data []byte) error {
 	// 尝试使用纯 Go 播放器（推荐，无外部依赖）
 	goPlayer, err := GetGoPlayer()
 	if err == nil {

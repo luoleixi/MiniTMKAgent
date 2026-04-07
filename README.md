@@ -30,24 +30,9 @@ mini-tmk-agent quickstart
 ```powershell
 # Windows
 .\mini-tmk-agent.exe quickstart
-
-# macOS/Linux
-./mini-tmk-agent quickstart
 ```
 
-### 从源码构建
 
-```bash
-# 克隆仓库
-git clone https://github.com/luoleixi/MiniTMKAgent.git
-cd MiniTMKAgent
-
-# 构建
-go build -o mini-tmk-agent.exe .
-
-# 运行
-.\mini-tmk-agent.exe quickstart
-```
 
 ---
 
@@ -131,8 +116,5 @@ mini-tmk-agent update --check             # 仅检查更新
 
 MIT License
 
----
 
-## 🤝 贡献
 
-欢迎提交 Issue 和 Pull Request！
