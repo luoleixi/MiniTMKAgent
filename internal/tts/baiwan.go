@@ -13,15 +13,12 @@ import (
 )
 
 // BaiwanTTS 阿里云百炼平台TTS (WebSocket流式API)
+// 每个TTS请求使用独立的WebSocket连接，避免并发冲突
 type BaiwanTTS struct {
 	apiKey     string
 	wsURL      string
 	sampleRate int
 	model      string
-
-	conn     *websocket.Conn
-	mu       sync.Mutex
-	isClosed bool
 }
 
 // NewBaiwanTTS 创建百炼平台TTS客户端
@@ -45,7 +42,6 @@ func NewBaiwanTTS(config *Config) (*BaiwanTTS, error) {
 		wsURL:      wsURL,
 		sampleRate: sampleRate,
 		model:      DefaultModel,
-		isClosed:   true,
 	}, nil
 }
 
@@ -60,15 +56,23 @@ func (t *BaiwanTTS) Synthesize(text, voice string) ([]byte, error) {
 		return nil, fmt.Errorf("清理后文本为空")
 	}
 
+	// 每个请求使用独立的连接
+	session := &ttsSession{
+		apiKey:     t.apiKey,
+		wsURL:      t.wsURL,
+		sampleRate: t.sampleRate,
+		model:      t.model,
+	}
+	defer session.Close()
+
 	// 建立WebSocket连接
-	if err := t.connect(); err != nil {
+	if err := session.connect(); err != nil {
 		return nil, err
 	}
-	defer t.Close()
 
 	// 收集所有音频数据
 	var audioData []byte
-	err := t.synthesizeInternal(text, voice, func(chunk []byte) {
+	err := session.synthesize(text, voice, func(chunk []byte) {
 		audioData = append(audioData, chunk...)
 	})
 	if err != nil {
@@ -89,22 +93,67 @@ func (t *BaiwanTTS) SynthesizeStream(text, voice string, onAudioChunk func(chunk
 		return fmt.Errorf("清理后文本为空")
 	}
 
+	// 每个请求使用独立的连接
+	session := &ttsSession{
+		apiKey:     t.apiKey,
+		wsURL:      t.wsURL,
+		sampleRate: t.sampleRate,
+		model:      t.model,
+	}
+	defer session.Close()
+
 	// 建立WebSocket连接
-	if err := t.connect(); err != nil {
+	if err := session.connect(); err != nil {
 		return err
 	}
 
-	err := t.synthesizeInternal(text, voice, onAudioChunk)
-	// 无论成功与否，都关闭连接，避免状态混乱
-	t.Close()
-	return err
+	return session.synthesize(text, voice, onAudioChunk)
 }
 
-// synthesizeInternal 内部合成方法
-// 百炼平台交互流程：run-task -> task-started -> continue-task -> finish-task -> task-finished
-func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chunk []byte)) error {
-	taskID := uuid.New().String()
+// ttsSession 单次TTS会话（独立连接）
+type ttsSession struct {
+	apiKey     string
+	wsURL      string
+	sampleRate int
+	model      string
+	conn       *websocket.Conn
+	mu         sync.Mutex
+}
 
+// connect 建立WebSocket连接
+func (s *ttsSession) connect() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	headers := http.Header{
+		"Authorization":              {fmt.Sprintf("bearer %s", s.apiKey)},
+		"X-DashScope-DataInspection": {"enable"},
+	}
+
+	// 设置超时
+	dialer := websocket.DefaultDialer
+	dialer.HandshakeTimeout = 10 * time.Second
+
+	conn, _, err := dialer.Dial(s.wsURL, headers)
+	if err != nil {
+		return fmt.Errorf("WebSocket连接失败: %w", err)
+	}
+
+	s.conn = conn
+	return nil
+}
+
+// synthesize 执行语音合成
+func (s *ttsSession) synthesize(text, voice string, onAudioChunk func(chunk []byte)) error {
+	s.mu.Lock()
+	conn := s.conn
+	s.mu.Unlock()
+
+	if conn == nil {
+		return fmt.Errorf("WebSocket未连接")
+	}
+
+	taskID := uuid.New().String()
 	if voice == "" {
 		voice = DefaultVoice
 	}
@@ -120,12 +169,12 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 			"task_group": "audio",
 			"task":       "tts",
 			"function":   "SpeechSynthesizer",
-			"model":      t.model,
+			"model":      s.model,
 			"parameters": map[string]interface{}{
 				"text_type":   "SSML",
 				"voice":       voice,
 				"format":      "mp3",
-				"sample_rate": t.sampleRate,
+				"sample_rate": s.sampleRate,
 				"volume":      50,
 				"rate":        1,
 				"pitch":       1,
@@ -134,7 +183,7 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 		},
 	}
 
-	if err := t.conn.WriteJSON(runTask); err != nil {
+	if err := conn.WriteJSON(runTask); err != nil {
 		return fmt.Errorf("发送run-task失败: %w", err)
 	}
 
@@ -145,13 +194,12 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 	// ========== 步骤2-6: 循环接收消息 ==========
 	for !finished {
 		// 设置读取超时（30秒）
-		t.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 
-		messageType, message, err := t.conn.ReadMessage()
+		messageType, message, err := conn.ReadMessage()
 		if err != nil {
-			// 检查是否是超时
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
-				return nil // 正常关闭
+				return nil
 			}
 			if time.Since(lastActivity) > 30*time.Second {
 				return fmt.Errorf("读取WebSocket消息超时")
@@ -199,7 +247,7 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 					},
 				}
 
-				if err := t.conn.WriteJSON(continueTask); err != nil {
+				if err := conn.WriteJSON(continueTask); err != nil {
 					return fmt.Errorf("发送continue-task失败: %w", err)
 				}
 				textSent = true
@@ -219,16 +267,14 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 					},
 				}
 
-				if err := t.conn.WriteJSON(finishTask); err != nil {
+				if err := conn.WriteJSON(finishTask); err != nil {
 					return fmt.Errorf("发送finish-task失败: %w", err)
 				}
 			}
 
 		case "result-generated":
-			// 服务端正在生成音频，继续接收
 			continue
 
-		// ========== 步骤6: 任务结束 ==========
 		case "task-finished":
 			finished = true
 			return nil
@@ -243,58 +289,36 @@ func (t *BaiwanTTS) synthesizeInternal(text, voice string, onAudioChunk func(chu
 	return nil
 }
 
-// connect 建立WebSocket连接
-func (t *BaiwanTTS) connect() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+// Close 关闭会话
+func (s *ttsSession) Close() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	// 如果连接已存在，先关闭它
-	if t.conn != nil {
-		t.conn.Close()
-		t.conn = nil
+	if s.conn != nil {
+		s.conn.Close()
+		s.conn = nil
 	}
-	t.isClosed = true
+}
 
-	headers := http.Header{
-		"Authorization":              {fmt.Sprintf("bearer %s", t.apiKey)},
-		"X-DashScope-DataInspection": {"enable"},
-	}
-
-	conn, _, err := websocket.DefaultDialer.Dial(t.wsURL, headers)
-	if err != nil {
-		return fmt.Errorf("WebSocket连接失败: %w", err)
-	}
-
-	t.conn = conn
-	t.isClosed = false
+// Close 关闭TTS客户端（无状态，无需操作）
+func (t *BaiwanTTS) Close() error {
 	return nil
 }
 
-// cleanText 清理文本（SSML 模式下保留标签格式）
+// cleanText 清理文本
 func (t *BaiwanTTS) cleanText(text string) string {
-	// 检查是否是 SSML 文本（包含 <speak> 标签）
 	isSSML := strings.Contains(text, "<speak") || strings.Contains(text, "<speak>")
 
-	// 只清理 emoji 和特殊控制字符
 	replacements := map[string]string{
-		"📱": "",
-		"🎤": "",
-		"🌐": "",
-		"🔊": "",
-		"⚠️": "",
-		"❌": "",
-		"✅": "",
-		"📝": "",
-		"👋": "",
-		"🛑": "",
-		"⏹️": "",
+		"📱": "", "🎤": "", "🌐": "", "🔊": "",
+		"⚠️": "", "❌": "", "✅": "", "📝": "",
+		"👋": "", "🛑": "", "⏹️": "",
 	}
 
 	for old, new := range replacements {
 		text = strings.ReplaceAll(text, old, new)
 	}
 
-	// SSML 模式下保留原始格式，不进行空格压缩
 	if !isSSML {
 		text = strings.TrimSpace(text)
 		for strings.Contains(text, "  ") {
@@ -303,18 +327,4 @@ func (t *BaiwanTTS) cleanText(text string) string {
 	}
 
 	return text
-}
-
-// Close 关闭TTS客户端
-func (t *BaiwanTTS) Close() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.isClosed = true
-	if t.conn != nil {
-		conn := t.conn
-		t.conn = nil
-		return conn.Close()
-	}
-	return nil
 }
