@@ -17,7 +17,7 @@ type SystemPlayer struct {
 func NewSystemPlayer() (*SystemPlayer, error) {
 	cmd, args := getSystemPlayerCommand()
 	if cmd == "" {
-		return nil, fmt.Errorf(getInstallHint())
+		return nil, fmt.Errorf("%s", getInstallHint())
 	}
 
 	return &SystemPlayer{

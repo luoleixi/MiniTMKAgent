@@ -9,7 +9,8 @@
       "Bash(grep:*)",
       "Bash(go run:*)",
       "Bash(.\\\\mini-tmk-agent.exe:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(go test:*)"
     ]
   }
 }
