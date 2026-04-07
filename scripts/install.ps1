@@ -1,6 +1,14 @@
 # MiniTMK Agent - One-Click Installer for Windows
 # Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 
+# Set Windows code page to UTF-8
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    # PowerShell 6+ uses UTF-8 by default
+} else {
+    # PowerShell 5.1 - set code page
+    chcp 65001 | Out-Null
+}
+
 # Set UTF-8 encoding
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -16,17 +24,19 @@ $RepoName = "MiniTMKAgent"
 $BinaryName = "mini-tmk-agent.exe"
 $InstallDir = "$env:LOCALAPPDATA\mini-tmk-agent"
 
-# Output functions
-function Write-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
-function Write-Success($msg) {
-    try {
-        Write-Host "[OK] $msg" -ForegroundColor Green
-    } catch {
-        Write-Output "[OK] $msg"
-    }
+# Output functions - use simple ASCII to avoid encoding issues
+function Write-Info($msg) {
+    Write-Host "[INFO] $msg" -ForegroundColor Cyan
 }
-function Write-Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
-function Write-Err($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
+function Write-Success($msg) {
+    Write-Host "[OK] $msg" -ForegroundColor Green
+}
+function Write-Warn($msg) {
+    Write-Host "[WARN] $msg" -ForegroundColor Yellow
+}
+function Write-Err($msg) {
+    Write-Host "[ERROR] $msg" -ForegroundColor Red
+}
 
 # Get system architecture
 function Get-Architecture {
@@ -126,9 +136,9 @@ function Add-ToUserPath {
 
 # Main program
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  MiniTMK Agent One-Click Installer" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "========================================"
+Write-Host "  MiniTMK Agent Installer"
+Write-Host "========================================"
 Write-Host ""
 
 $arch = Get-Architecture
@@ -144,19 +154,19 @@ $installedPath = Install-Binary $tempFile
 Add-ToUserPath
 
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Installation Complete!" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
+Write-Host "========================================"
+Write-Host "  Installation Complete!"
+Write-Host "========================================"
 Write-Host ""
 
 # Update current session PATH
 $env:Path += ";$InstallDir"
 
-Write-Host "Start using:" -ForegroundColor Yellow
+Write-Host "Start using:"
 Write-Host ""
-Write-Host "  mini-tmk-agent" -ForegroundColor White
+Write-Host "  mini-tmk-agent"
 Write-Host ""
-Write-Host "Or:" -ForegroundColor Gray
+Write-Host "Or:"
 Write-Host "  $InstallDir\$BinaryName"
 Write-Host ""
 Write-Host "Get API Key: https://dashscope.console.aliyun.com/"
