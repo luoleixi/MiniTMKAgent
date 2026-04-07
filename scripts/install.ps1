@@ -3,7 +3,6 @@
 
 # 设置 UTF-8 编码
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 param(
     [string]$Version = "latest"
@@ -117,24 +116,7 @@ function Add-ToUserPath {
     $newPath = if ($currentPath.EndsWith(";")) { "$currentPath$InstallDir" } else { "$currentPath;$InstallDir" }
     [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
 
-    # 同时更新当前会话的 PATH，使其立即生效
-    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + $newPath
-
     Write-Success "已添加到 PATH"
-}
-
-# 验证安装
-function Verify-Installation($binaryPath) {
-    Write-Info "验证安装..."
-
-    try {
-        $result = & $binaryPath --version 2>&1
-        Write-Success "运行正常"
-        return $true
-    } catch {
-        Write-Warn "无法验证版本，但安装已完成"
-        return $false
-    }
 }
 
 # 主程序
@@ -154,7 +136,6 @@ Write-Info "安装版本: $Version"
 
 $tempFile = Download-Binary $Version $arch
 $installedPath = Install-Binary $tempFile
-Verify-Installation $installedPath
 Add-ToUserPath
 
 Write-Host ""
@@ -162,10 +143,15 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  安装完成!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
+
+# 创建启动函数
+$env:Path += ";$InstallDir"
+
 Write-Host "立即使用:" -ForegroundColor Yellow
-Write-Host "  mini-tmk-agent quickstart"
 Write-Host ""
-Write-Host "或者完整路径运行:" -ForegroundColor Gray
+Write-Host "  mini-tmk-agent quickstart" -ForegroundColor White
+Write-Host ""
+Write-Host "或者:" -ForegroundColor Gray
 Write-Host "  $InstallDir\$BinaryName quickstart"
 Write-Host ""
 Write-Host "获取 API Key: https://dashscope.console.aliyun.com/"
