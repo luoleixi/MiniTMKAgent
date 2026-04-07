@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/
 
 安装完成后，**重新打开终端**，即可使用：
 ```bash
-mini-tmk-agent quickstart
+mini-tmk-agent
 ```
 
 ---
@@ -27,53 +27,55 @@ mini-tmk-agent quickstart
 
 从 [Releases 页面](https://github.com/luoleixi/MiniTMKAgent/releases) 下载对应系统的版本，解压后使用：
 
-```powershell
-# Windows
-.\mini-tmk-agent.exe quickstart
+```bash
+# 直接运行进入交互式模式
+./mini-tmk-agent
 ```
-如果不想通过命令行启动，可以将start.bat文件与 .exe 文件放在相同目录下，双击 start.bat文件启动。
 
+### 从源码构建
+
+```bash
+git clone https://github.com/luoleixi/MiniTMKAgent.git
+cd MiniTMKAgent
+go build -o mini-tmk-agent .
+./mini-tmk-agent
+```
 
 ---
 
-## 🔧 功能说明
+## 🔧 功能说明（交互式模式）
 
-### 实时同传模式
+运行 `mini-tmk-agent` 进入交互式 CLI，支持以下命令：
 
-```bash
-# 中文 → 英文
-mini-tmk-agent stream --source-lang zh --target-lang en
+### 实时同传
 
-# 英文 → 中文
-mini-tmk-agent stream --source-lang en --target-lang zh
-
-# 日文 → 中文
-mini-tmk-agent stream --source-lang ja --target-lang zh
+```
+> /start              # 启动同传（默认 zh → en）
+> /start zh en        # 中文 → 英文
+> /start en zh        # 英文 → 中文
+> /start zh ja        # 中文 → 日文
+> /start-en           # 快捷：中文 → 英文
+> /start-ja           # 快捷：中文 → 日文
+> /start-ko           # 快捷：中文 → 韩文
 ```
 
 **支持的语言：** zh（中文）、en（英文）、ja（日文）、ko（韩文）、fr（法文）、de（德文）、es（西班牙文）、ru（俄文）
 
-### 文件转录模式
+### 文件转录
 
-```bash
-# 转录音频文件为文本
-mini-tmk-agent transcript --file audio.wav --output result.txt --lang zh
-
-# 支持格式：wav, mp3, pcm, m4a, flac, aac, ogg
+```
+> /transcript audio.wav output.txt zh    # 转录音频为文本
 ```
 
-### 交互式 CLI 模式
+支持格式：wav, mp3, pcm, m4a, flac, aac, ogg
 
-```bash
-mini-tmk-agent interactive
+### 其他命令
+
 ```
-
-常用命令：
-- `/start` - 启动同传（默认 zh → en）
-- `/start zh en` - 指定语言对
-- `/transcript file.wav out.txt zh` - 转录音频
-- `/help` - 显示帮助
-- `/quit` - 退出
+> /config        # 查看/修改配置
+> /help          # 显示帮助
+> /quit          # 退出程序
+```
 
 ---
 
@@ -94,9 +96,12 @@ mini-tmk-agent interactive
 
 ---
 
-## 📝 命令参考
+## 📝 顶层命令参考
 
 ```bash
+# 进入交互式模式（推荐）
+mini-tmk-agent
+
 # 查看帮助
 mini-tmk-agent --help
 
@@ -115,6 +120,3 @@ mini-tmk-agent update --check             # 仅检查更新
 ## 📄 许可证
 
 MIT License
-
-
-
