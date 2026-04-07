@@ -1,5 +1,9 @@
 # MiniTMK Agent - One-Click Installer for Windows
-# Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/master/scripts/install.ps1 | iex
+# Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
+
+# 设置 UTF-8 编码
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 param(
     [string]$Version = "latest"
@@ -112,6 +116,10 @@ function Add-ToUserPath {
 
     $newPath = if ($currentPath.EndsWith(";")) { "$currentPath$InstallDir" } else { "$currentPath;$InstallDir" }
     [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+
+    # 同时更新当前会话的 PATH，使其立即生效
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + $newPath
+
     Write-Success "已添加到 PATH"
 }
 
@@ -154,9 +162,11 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  安装完成!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "使用方法:" -ForegroundColor Yellow
-Write-Host "  1. 重新打开 PowerShell 或 CMD"
-Write-Host "  2. 运行: mini-tmk-agent --help"
+Write-Host "立即使用:" -ForegroundColor Yellow
+Write-Host "  mini-tmk-agent quickstart"
+Write-Host ""
+Write-Host "或者完整路径运行:" -ForegroundColor Gray
+Write-Host "  $InstallDir\$BinaryName quickstart"
 Write-Host ""
 Write-Host "获取 API Key: https://dashscope.console.aliyun.com/"
 Write-Host ""
