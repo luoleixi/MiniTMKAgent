@@ -326,7 +326,9 @@ func (a *StreamAgent) playTranslatedText(ctx context.Context, seq int, text stri
 		var err error
 
 		go func() {
-			audioData, err = a.tts.Synthesize(text, tts.DefaultVoice)
+			// 根据目标语言选择合适的音色
+			voice := tts.GetVoiceByLanguage(a.config.TargetLang)
+			audioData, err = a.tts.Synthesize(text, voice)
 			close(ttsDone)
 		}()
 

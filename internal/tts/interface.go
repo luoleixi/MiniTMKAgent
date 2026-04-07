@@ -32,3 +32,23 @@ const DefaultVoice = "longanyang"
 
 // DefaultModel 默认模型
 const DefaultModel = "cosyvoice-v3-flash"
+
+// LanguageVoiceMap 语言到音色的映射
+var LanguageVoiceMap = map[string]string{
+	"zh": "longanyang", // 中文
+	"en": "longanyang", // 英文（使用通用音色，CosyVoice支持多语言）
+	"ja": "longxiaoyun", // 日文
+	"ko": "longxiaoyun", // 韩文
+	"fr": "longanyang", // 法文
+	"de": "longanyang", // 德文
+	"es": "longanyang", // 西班牙文
+	"ru": "longanyang", // 俄文
+}
+
+// GetVoiceByLanguage 根据语言代码获取音色
+func GetVoiceByLanguage(lang string) string {
+	if voice, ok := LanguageVoiceMap[lang]; ok {
+		return voice
+	}
+	return DefaultVoice
+}
