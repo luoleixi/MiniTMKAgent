@@ -2,122 +2,46 @@
 
 简易同声传译 Agent，支持实时语音翻译和文件转录。
 
-## 🚀 快速开始（开箱即用）
+## 🚀 开箱即用（一行命令）
 
-### 方式一：一行命令安装（推荐）
-
-**macOS / Linux:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/luoleixi/mini-tmk-agent/main/scripts/install.sh | bash
-```
-
-**Windows (PowerShell):**
+**Windows PowerShell:**
 ```powershell
-irm https://raw.githubusercontent.com/luoleixi/mini-tmk-agent/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 ```
 
-或者使用完整命令：
+安装完成后，**重新打开终端**，即可使用：
 ```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/luoleixi/mini-tmk-agent/main/scripts/install.ps1' -UseBasicParsing | Invoke-Expression
-```
-
-安装完成后直接运行：
-```bash
 mini-tmk-agent quickstart
 ```
 
 ---
 
-### 方式二：使用预编译二进制文件
+## 📦 其他安装方式
 
-1. **下载对应系统的版本** [Releases 页面](../../releases)
+### 预编译二进制
 
-2. **解压后双击运行或直接命令行启动**
+从 [Releases 页面](../../releases) 下载对应系统的版本，解压后使用：
 
-   **Windows:**
-   ```powershell
-   # 快速启动（交互式输入 API Key）
-   .\mini-tmk-agent.exe quickstart
-   
-   # 或直接带 API Key 启动
-   .\mini-tmk-agent.exe quickstart --api-key sk-xxxxxx
-   ```
-
-   **macOS/Linux:**
-   ```bash
-   # 快速启动
-   ./mini-tmk-agent quickstart
-   
-   # 或带 API Key 启动
-   ./mini-tmk-agent quickstart --api-key sk-xxxxxx
-   ```
-
-3. **开始使用**
-   - 程序自动配置并启动
-   - 对着麦克风说话，自动实时翻译
-   - 按 `Ctrl+C` 停止
-
-### 方式三：使用环境变量
-
-```bash
-# 设置 API Key（只需一次）
-export MINI_TMK_API_KEY=sk-xxxxxx  # Linux/macOS
-set MINI_TMK_API_KEY=sk-xxxxxx     # Windows CMD
-$env:MINI_TMK_API_KEY="sk-xxxxxx"  # PowerShell
-
-# 启动
-mini-tmk-agent quickstart
-```
-
-### 方式四：交互式配置
-
-```bash
-mini-tmk-agent quickstart
-# 按提示输入百炼平台 API Key
-```
-
----
-
-## 📦 安装
-
-### 一行命令安装
-
-**macOS / Linux:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.sh | bash
-```
-
-**Windows (PowerShell 管理员):**
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1' -UseBasicParsing | Invoke-Expression"
+# Windows
+.\mini-tmk-agent.exe quickstart
+
+# macOS/Linux
+./mini-tmk-agent quickstart
 ```
-
-安装脚本会自动：
-- 检测系统架构
-- 下载最新版本
-- 安装到系统 PATH
-- 创建快速启动脚本
-
-### 从 Release 下载
-
-| 系统 | 架构 | 下载 |
-|------|------|------|
-| Windows | amd64 | [下载](../../releases/latest) |
-| macOS | amd64/arm64 | [下载](../../releases/latest) |
-| Linux | amd64/arm64 | [下载](../../releases/latest) |
 
 ### 从源码构建
 
 ```bash
 # 克隆仓库
-git clone https://github.com/luoleixi/mini-tmk-agent.git
-cd mini-tmk-agent
+git clone https://github.com/luoleixi/MiniTMKAgent.git
+cd MiniTMKAgent
 
 # 构建
-go build -o mini-tmk-agent .
+go build -o mini-tmk-agent.exe .
 
 # 运行
-./mini-tmk-agent quickstart
+.\mini-tmk-agent.exe quickstart
 ```
 
 ---
@@ -191,14 +115,9 @@ mini-tmk-agent config status              # 查看配置状态
 mini-tmk-agent config set-baiwan-key      # 设置 API Key
 mini-tmk-agent config set-mode direct     # 设置直连模式
 
-# 下载依赖/示例
-mini-tmk-agent download ffmpeg            # FFmpeg 安装指南
-mini-tmk-agent download demo              # 下载示例音频
-
 # 自动更新
 mini-tmk-agent update                     # 检查并更新到最新版本
 mini-tmk-agent update --check             # 仅检查更新
-mini-tmk-agent update --version v1.1.0    # 更新到指定版本
 ```
 
 ---

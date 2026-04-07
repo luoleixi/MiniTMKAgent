@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"mini-tmk-agent/internal/agent"
 	"mini-tmk-agent/internal/config"
-	"mini-tmk-agent/pkg/utils"
+	"mini-tmk-agent/internal/utils"
 )
 
 var interactiveCmd = &cobra.Command{
