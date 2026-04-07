@@ -171,7 +171,7 @@ func (s *ttsSession) synthesize(text, voice string, onAudioChunk func(chunk []by
 			"function":   "SpeechSynthesizer",
 			"model":      s.model,
 			"parameters": map[string]interface{}{
-				"text_type":   "SSML",
+				"text_type":   "Text",
 				"voice":       voice,
 				"format":      "mp3",
 				"sample_rate": s.sampleRate,
