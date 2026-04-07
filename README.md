@@ -4,13 +4,18 @@
 
 ## 🚀 开箱即用（一行命令）
 
-**Windows PowerShell:**
+**Windows (PowerShell):**
 ```powershell
 iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 ```
 
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.sh | bash
+```
+
 安装完成后，**重新打开终端**，即可使用：
-```powershell
+```bash
 mini-tmk-agent quickstart
 ```
 
