@@ -34,8 +34,9 @@ var quickstartCmd = &cobra.Command{
 var quickstartAPIKey string
 
 func init() {
-	rootCmd.AddCommand(quickstartCmd)
-	quickstartCmd.Flags().StringVarP(&quickstartAPIKey, "api-key", "k", "", "百炼平台 API Key")
+	// quickstart 命令已移除，请使用 interactive 命令
+	// rootCmd.AddCommand(quickstartCmd)
+	// quickstartCmd.Flags().StringVarP(&quickstartAPIKey, "api-key", "k", "", "百炼平台 API Key")
 }
 
 func runQuickstart(cmd *cobra.Command, args []string) error {

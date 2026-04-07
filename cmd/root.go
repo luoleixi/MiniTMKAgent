@@ -23,9 +23,14 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "mini-tmk-agent",
 	Short: "简易同声传译Agent",
-	Long: `mini-tmk-agent 是一个简易的同声传译Agent，支持两种模式：
-  - stream: 流式同传模式，实时监听麦克风并翻译
-  - transcript: 转录模式，将音频文件转录为文本`,
+	Long: `mini-tmk-agent 是一个简易的同声传译Agent。
+
+主要命令：
+  - interactive: 交互式CLI模式（推荐，功能最全）
+  - config: 配置管理
+  - update: 检查并更新到最新版本
+
+详细功能请使用 interactive 命令查看。`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// 双击运行（没有参数）时，进入 interactive 模式（显示菜单）
 		if err := runInteractive(cmd, args); err != nil {

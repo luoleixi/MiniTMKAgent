@@ -36,10 +36,11 @@ var streamCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(streamCmd)
-	streamCmd.Flags().StringVar(&sourceLang, "source-lang", "zh", "源语言代码 (zh, en, ja, ko, fr, de, es, ru)")
-	streamCmd.Flags().StringVar(&targetLang, "target-lang", "en", "目标语言代码 (zh, en, ja, ko, fr, de, es, ru)")
-	streamCmd.Flags().BoolVar(&directMode, "direct", false, "使用直连模式（绕过服务端中转）")
+	// stream 命令已移除，请使用 interactive 命令
+	// rootCmd.AddCommand(streamCmd)
+	// streamCmd.Flags().StringVar(&sourceLang, "source-lang", "zh", "源语言代码 (zh, en, ja, ko, fr, de, es, ru)")
+	// streamCmd.Flags().StringVar(&targetLang, "target-lang", "en", "目标语言代码 (zh, en, ja, ko, fr, de, es, ru)")
+	// streamCmd.Flags().BoolVar(&directMode, "direct", false, "使用直连模式（绕过服务端中转）")
 }
 
 func runStream(cmd *cobra.Command, args []string) error {

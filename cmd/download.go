@@ -61,9 +61,10 @@ var downloadDemoCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(downloadCmd)
-	downloadCmd.AddCommand(downloadFFmpegCmd)
-	downloadCmd.AddCommand(downloadDemoCmd)
+	// download 命令已移除，请使用 interactive 命令
+	// rootCmd.AddCommand(downloadCmd)
+	// downloadCmd.AddCommand(downloadFFmpegCmd)
+	// downloadCmd.AddCommand(downloadDemoCmd)
 
 	// demo 命令参数
 	downloadDemoCmd.Flags().StringVarP(&downloadOutput, "output", "o", "demo.wav", "输出文件路径")

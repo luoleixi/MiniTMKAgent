@@ -24,12 +24,13 @@ var transcriptCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(transcriptCmd)
-	transcriptCmd.Flags().StringVar(&audioFile, "file", "", "音频文件路径 (支持 PCM, WAV, MP3)")
-	transcriptCmd.Flags().StringVar(&outputFile, "output", "", "输出文本文件路径")
-	transcriptCmd.Flags().StringVar(&transcriptLang, "lang", "zh", "音频语言 (zh, en, ja, ko, fr, de, es, ru)")
-	transcriptCmd.MarkFlagRequired("file")
-	transcriptCmd.MarkFlagRequired("output")
+	// transcript 命令已移除，请使用 interactive 命令
+	// rootCmd.AddCommand(transcriptCmd)
+	// transcriptCmd.Flags().StringVar(&audioFile, "file", "", "音频文件路径 (支持 PCM, WAV, MP3)")
+	// transcriptCmd.Flags().StringVar(&outputFile, "output", "", "输出文本文件路径")
+	// transcriptCmd.Flags().StringVar(&transcriptLang, "lang", "zh", "音频语言 (zh, en, ja, ko, fr, de, es, ru)")
+	// transcriptCmd.MarkFlagRequired("file")
+	// transcriptCmd.MarkFlagRequired("output")
 }
 
 func runTranscript(cmd *cobra.Command, args []string) error {

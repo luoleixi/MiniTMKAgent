@@ -25,13 +25,13 @@ mini-tmk-agent quickstart
 
 ### 预编译二进制
 
-从 [Releases 页面](../../releases) 下载对应系统的版本，解压后使用：
+从 [Releases 页面](https://github.com/luoleixi/MiniTMKAgent/releases) 下载对应系统的版本，解压后使用：
 
 ```powershell
 # Windows
 .\mini-tmk-agent.exe quickstart
 ```
-
+如果不想通过命令行启动，可以将start.bat文件与 .exe 文件放在相同目录下，双击 start.bat文件启动。
 
 
 ---
