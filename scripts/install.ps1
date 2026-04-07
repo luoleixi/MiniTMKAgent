@@ -1,12 +1,12 @@
 # MiniTMK Agent - One-Click Installer for Windows
 # Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 
-# 设置 UTF-8 编码
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
 param(
     [string]$Version = "latest"
 )
+
+# 设置 UTF-8 编码
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
@@ -144,7 +144,7 @@ Write-Host "  安装完成!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
-# 创建启动函数
+# 更新当前会话 PATH
 $env:Path += ";$InstallDir"
 
 Write-Host "立即使用:" -ForegroundColor Yellow
