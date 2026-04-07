@@ -2,6 +2,7 @@
 # Usage: iwr -useb https://raw.githubusercontent.com/luoleixi/MiniTMKAgent/main/scripts/install.ps1 | iex
 
 # 设置 UTF-8 编码
+$OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 
@@ -17,7 +18,13 @@ $InstallDir = "$env:LOCALAPPDATA\mini-tmk-agent"
 
 # 输出函数
 function Write-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
-function Write-Success($msg) { Write-Host "[OK] $msg" -ForegroundColor Green }
+function Write-Success($msg) {
+    try {
+        Write-Host "[OK] $msg" -ForegroundColor Green
+    } catch {
+        Write-Output "[OK] $msg"
+    }
+}
 function Write-Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
 function Write-Err($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
