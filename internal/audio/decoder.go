@@ -24,7 +24,7 @@ func NewDecoder(filename string) (AudioDecoder, error) {
 
 	switch ext {
 	case ".pcm":
-		return &PCMDecoder{}, nil
+		return NewPCMDecoder(), nil
 	case ".wav":
 		return &WAVDecoder{}, nil
 	case ".mp3":
@@ -35,23 +35,103 @@ func NewDecoder(filename string) (AudioDecoder, error) {
 }
 
 // PCMDecoder PCM裸数据解码器
-type PCMDecoder struct{}
+type PCMDecoder struct {
+	BitsPerSample int  // 位深度: 8, 16, 24, 32 (默认16)
+	SampleRate    int  // 采样率: 8000, 16000, 44100等 (默认16000)
+	NumChannels   int  // 声道数: 1(单声道), 2(立体声) (默认1)
+	IsFloat       bool // 32位时是否为浮点格式
+}
 
-// Decode 解码PCM数据 (16bit, 单声道, 16kHz)
+// NewPCMDecoder 创建默认PCM解码器 (16bit, 16kHz, 单声道)
+func NewPCMDecoder() *PCMDecoder {
+	return &PCMDecoder{
+		BitsPerSample: 16,
+		SampleRate:    16000,
+		NumChannels:   1,
+		IsFloat:       false,
+	}
+}
+
+// Decode 解码PCM数据
 func (d *PCMDecoder) Decode(reader io.Reader) ([]int16, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	// 确保数据长度为2的倍数 (16bit = 2 bytes)
-	if len(data)%2 != 0 {
-		data = data[:len(data)-1]
+	if len(data) == 0 {
+		return nil, fmt.Errorf("PCM数据为空")
 	}
 
-	samples := make([]int16, len(data)/2)
-	for i := 0; i < len(samples); i++ {
-		samples[i] = int16(binary.LittleEndian.Uint16(data[i*2 : (i*2)+2]))
+	// 使用默认配置（如果未设置）
+	bits := d.BitsPerSample
+	if bits == 0 {
+		bits = 16
+	}
+	channels := d.NumChannels
+	if channels == 0 {
+		channels = 1
+	}
+	sampleRate := d.SampleRate
+	if sampleRate == 0 {
+		sampleRate = 16000
+	}
+
+	var samples []int16
+
+	switch bits {
+	case 8:
+		samples = make([]int16, len(data))
+		for i := 0; i < len(data); i++ {
+			samples[i] = int16(int(data[i])-128) * 256
+		}
+	case 16:
+		if len(data)%2 != 0 {
+			data = data[:len(data)-1]
+		}
+		samples = make([]int16, len(data)/2)
+		for i := 0; i < len(samples); i++ {
+			samples[i] = int16(binary.LittleEndian.Uint16(data[i*2 : (i*2)+2]))
+		}
+	case 24:
+		if len(data)%3 != 0 {
+			data = data[:len(data)-(len(data)%3)]
+		}
+		samples = make([]int16, len(data)/3)
+		for i := 0; i < len(samples); i++ {
+			b0 := int32(data[i*3])
+			b1 := int32(data[i*3+1])
+			b2 := int32(data[i*3+2])
+			val := (b0 | (b1 << 8) | (b2 << 16))
+			if val >= 8388608 {
+				val -= 16777216
+			}
+			samples[i] = int16(val >> 8)
+		}
+	case 32:
+		if len(data)%4 != 0 {
+			data = data[:len(data)-(len(data)%4)]
+		}
+		samples = make([]int16, len(data)/4)
+		if d.IsFloat {
+			for i := 0; i < len(samples); i++ {
+				bits := binary.LittleEndian.Uint32(data[i*4 : (i*4)+4])
+				f := math.Float32frombits(bits)
+				samples[i] = int16(f * 32767)
+			}
+		} else {
+			for i := 0; i < len(samples); i++ {
+				val := int32(binary.LittleEndian.Uint32(data[i*4 : (i*4)+4]))
+				samples[i] = int16(val >> 16)
+			}
+		}
+	default:
+		return nil, fmt.Errorf("不支持的PCM位深度: %d", bits)
+	}
+
+	// 转换为单声道和16kHz（如果需要）
+	if sampleRate != 16000 || channels != 1 {
+		samples = convertAudio(samples, sampleRate, channels, 16000, 1)
 	}
 
 	return samples, nil
