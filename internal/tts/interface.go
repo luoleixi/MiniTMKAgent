@@ -34,15 +34,16 @@ const DefaultVoice = "longanyang"
 const DefaultModel = "cosyvoice-v3-flash"
 
 // LanguageVoiceMap 语言到音色的映射
+// CosyVoice-v3 支持多语言跨语言合成，使用通用音色即可
 var LanguageVoiceMap = map[string]string{
-	"zh": "longanyang", // 中文
-	"en": "longanyang", // 英文（使用通用音色，CosyVoice支持多语言）
-	"ja": "longxiaoyun", // 日文
-	"ko": "longxiaoyun", // 韩文
-	"fr": "longanyang", // 法文
-	"de": "longanyang", // 德文
-	"es": "longanyang", // 西班牙文
-	"ru": "longanyang", // 俄文
+	"zh": "longanyang", // 中文（多语言通用）
+	"en": "longanyang", // 英文（多语言通用）
+	"ja": "longanyang", // 日文（多语言通用）
+	"ko": "longanyang", // 韩文（多语言通用）
+	"fr": "longanyang", // 法文（多语言通用）
+	"de": "longanyang", // 德文（多语言通用）
+	"es": "longanyang", // 西班牙文（多语言通用）
+	"ru": "longanyang", // 俄文（多语言通用）
 }
 
 // GetVoiceByLanguage 根据语言代码获取音色
