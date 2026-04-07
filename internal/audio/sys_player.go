@@ -146,9 +146,21 @@ func PlayMP3Data(data []byte) error {
 		return nil
 	}
 
-	// 使用播放队列，确保按顺序播放
+	// 使用播放队列，自动分配序列号
 	queue := GetPlayQueue()
-	queue.Enqueue(data)
+	queue.EnqueueWithoutSeq(data)
+	return nil
+}
+
+// PlayMP3DataWithSequence 带序列号播放MP3数据（确保顺序）
+func PlayMP3DataWithSequence(seq int, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	// 使用指定的序列号入队
+	queue := GetPlayQueue()
+	queue.Enqueue(seq, data)
 	return nil
 }
 

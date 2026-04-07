@@ -25,19 +25,21 @@ type StreamConfig struct {
 
 // StreamAgent 流式同传Agent
 type StreamAgent struct {
-	config     StreamConfig
-	recognizer recognizer.Recognizer
-	recorder   *audio.Recorder
-	vad        *audio.VAD
-	translator translator.Translator
-	tts        tts.TTS
-	player     *audio.Player
+	config      StreamConfig
+	recognizer  recognizer.Recognizer
+	recorder    *audio.Recorder
+	vad         *audio.VAD
+	translator  translator.Translator
+	tts         tts.TTS
+	player      *audio.Player
+	seqGen      *audio.SequenceGenerator
 }
 
 // NewStreamAgent 创建流式同传Agent
 func NewStreamAgent(config StreamConfig) *StreamAgent {
 	return &StreamAgent{
 		config: config,
+		seqGen: audio.NewSequenceGenerator(),
 	}
 }
 
@@ -293,9 +295,10 @@ func (a *StreamAgent) handleRecognitionResult(ctx context.Context, result recogn
 
 		fmt.Printf("🌐 翻译结果: %s\n", translatedText)
 
-		// 如果有TTS，进行语音合成
+		// 如果有TTS，进行语音合成（分配序列号确保播放顺序）
 		if a.tts != nil {
-			go a.playTranslatedText(ctx, translatedText)
+			seq := a.seqGen.Next()
+			go a.playTranslatedText(ctx, seq, translatedText)
 		}
 	} else {
 		// 临时结果：使用回车符覆盖当前行
@@ -304,9 +307,11 @@ func (a *StreamAgent) handleRecognitionResult(ctx context.Context, result recogn
 }
 
 // playTranslatedText 播放翻译后的文本（异步执行，不阻塞）
-func (a *StreamAgent) playTranslatedText(ctx context.Context, text string) {
+// seq: 序列号，确保按句子顺序播放
+func (a *StreamAgent) playTranslatedText(ctx context.Context, seq int, text string) {
 	// 异步执行 TTS，避免阻塞识别流程
 	go func() {
+		utils.Debugf("开始TTS合成 [序列号 #%d]...", seq)
 		utils.Debug("开始TTS合成...")
 
 		// 检查 TTS 是否可用
@@ -340,13 +345,13 @@ func (a *StreamAgent) playTranslatedText(ctx context.Context, text string) {
 
 		utils.Debugf("TTS 合成成功，音频大小: %.2f KB", float64(len(audioData))/1024)
 
-		fmt.Println("🔊 播放翻译结果...")
-		if err := audio.PlayMP3Data(audioData); err != nil {
+		fmt.Printf("🔊 播放翻译结果 [序列号 #%d]...\n", seq)
+		if err := audio.PlayMP3DataWithSequence(seq, audioData); err != nil {
 			fmt.Printf("   ⚠️  播放失败: %v\n", err)
 			return
 		}
 
-		fmt.Println("🔊 播放完成")
+		fmt.Printf("🔊 播放完成 [序列号 #%d]\n", seq)
 	}()
 }
 
